@@ -33,7 +33,7 @@ dureeVitL		equ
 				ljmp		incVitesse
 				
 				ORG		000Bh                ;timer0, utilisé pour le PWM
-				ljmp		majPWM
+				ljmp		PWMDir
 				
 				ORG		0013h						;int1, relié à rien
 				
@@ -49,18 +49,40 @@ dureeVitL		equ
 ;---------------------------------------------------------------------------------------
 ;Int0 : Mise à jour pour le calcul de vitesse 
 incVitesse:
-				djnz		R6, continue			;On compte tout simplement le nombre de fronts descendants dans un registre sur 20 ms
+				djnz		r1, continue			;On compte tout simplement le nombre de fronts descendants dans un registre sur 20 ms
 continue:									
 				RETI
 				
 ;---------------------------------------------------------------------------------------
-;Timer0 : Gestion du PWM						;Idee : on gère le timer par étape, en utilisant un registre qui indique quelle est l'étape à gérer
-majPWM:												;Etape 0 : début du PWM, on charge dans le timer0 la valeur du PWM direction, on met le bit direction à 1 et on incrémente le compteur d'étape
-PWMDir:                                   ;Etape 1 : on charge le complément à 2.5ms de la valeur du PWM de drection dans le timer0, met le bit de direction à 0 et on incrémente le compteur d'étape
-PWMFinDir:											;Etape 2 : on charge dans le timer0... bref, vous avez compris
-PWMMot:												; + calcul de vitesse 
+;Timer0 : Gestion du PWM : on gère le timer par étape, en utilisant un registre qui indique quelle est l'étape à gérer
+;Etape 0 : début du PWM, on charge dans le timer0 la valeur du PWM direction, on met le bit direction à 1 et on incrémente le compteur d'étape
+;Etape 1 : on charge le complément à 2.5ms de la valeur du PWM de drection dans le timer0, met le bit de direction à 0 et on incrémente le compteur d'étape
+;Etape 2 : on charge dans le timer0... bref, vous avez compris
+; + calcul de vitesse
+PWMDir:
+				clr		tr0
+				cjne		r0,#0,PWMFinDir
+				setb		direction
+				;TODO
+				inc 		r0
+				sjmp		PWMfin
+PWMFinDir:
+				cjne		r0,#1,PWMMot
+				clr		direction
+				;TODO
+				inc		r0
+				sjmp		PWMfin
+PWMMot:
+				cjne		r0,#2,PWMFinMot
+				setb		moteur
+				;TODO
+				inc		r0
+				sjmp		PWMfin
 PWMFinMot:
-calculVit:
+				clr		moteur
+				;TODO
+				mov		r0,#0
+PWMFin:
 				RETI
 				
 ;---------------------------------------------------------------------------------------
