@@ -88,6 +88,7 @@ PWMFin:
 ;---------------------------------------------------------------------------------------
 ;Timer 1 : Calcul de la vitesse
 majVitesse:
+	
 				RETI
 				
 ;---------------------------------------------------------------------------------------
@@ -135,14 +136,19 @@ accelerer_initAcc:  ;incrémente le PWM avec bouton poussoir
 	clr		C
 	mov		A,dureeVitL
 	add		A,#100		;ajoute 100 à dureeVitL
+	mov		dureeVitL,A
 	mov		A,dureeVitH
 	addc		A,#0			 ;ajout de l'éventuel carry dans dureeVitH
 	jc			decelerer_initDec	;en espérant que addc remette le carry à 0
 	add		A,#100
 	ljmp		init_vit_dir
 decelerer_initDec: ; décrémente le PWM avec bouton poussoir
+	mov		A,dureeVitL
 	clr		C
-	subb		dureeVitL,#100
+	subb		A,#100		;soustrait 100 à la duree du PWM de vitesse
+	mov		dureeVitL,A
+	mov		A,dureeVitH
+	subb		A,#0
 	ljmp		init_vit_dir
 	
 fin:	;le programme de fin doit arrêter le véhicule et boucler
