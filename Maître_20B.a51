@@ -98,6 +98,60 @@ message:
 ;====================================SOUS-PROGRAMMES====================================
 ;---------------------------------------------------------------------------------------
 ;Initialisation : capture de la vitesse calibrée via les boutons poussoir + initialisation des timers +... ??
+
+	org 		0030h	
+
+timer40ms: ;timer élémentaire de 40 msecondes
+	mov		a,tmod		;récupère ancien timer
+	mov		th1,			;fixe les poids fort du timer
+	mov		tl1			;fixe les poids faible du timer
+	anl		a,#10h		;utilisation du timer sur 16 bits avec horloge interne
+	orl		tmod,a		;réécriture de tmod
+	setb		tr1			;mise en marche du timer1
+	ret
+	
+timer5s: ;timer de 5secondes
+	mov		R1,#50		
+boucletimer5s:
+	djnz		R1,boucletimer5s
+	lcall		timer40ms
+	ret
+
+	
+
+; Programme principal --------------------------------------------------------
+
+debut:
+	setb		ea 		; autorise les interruptions
+	setb		et1		;autorise l'interruption pour le timer0
+	lcall		timer5s	;appel du timer pour initialiser dir et vitesse
+init_vit_dir:
+	jnb		initDec, decelerer_initDec
+	jnb		initAcc, accelerer_initAcc	
+	sjmp		init_vit_dir
+accelerer_initAcc:  ;incrémente le PWM avec bouton poussoir
+	jnb		initDec,decelerer_initDec
+	jc			decelerer_initDec ; Si dépassement de ffffh, on soustrait 100
+	clr		C
+	mov		A,dureeVitL
+	add		A,#100		;ajoute 100 à dureeVitL
+	mov		A,dureeVitH
+	addc		A,#0			 ;ajout de l'éventuel carry dans dureeVitH
+	jc			decelerer_initDec	;en espérant que addc remette le carry à 0
+	add		A,#100
+	ljmp		init_vit_dir
+decelerer_initDec: ; décrémente le PWM avec bouton poussoir
+	clr		C
+	subb		dureeVitL,#100
+	ljmp		init_vit_dir
+	
+fin:	;le programme de fin doit arrêter le véhicule et boucler
+bouclefin:
+	sjmp		fin
+
+	
+	END
+
 ;---------------------------------------------------------------------------------------
 ;Tourner à droite
 ;---------------------------------------------------------------------------------------
